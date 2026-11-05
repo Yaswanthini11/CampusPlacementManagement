@@ -4,6 +4,10 @@ using CampusPlacementManagement.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.DataProtection;
+using CampusPlacementManagement.Repositories.Interfaces;
+using CampusPlacementManagement.Repositories.Implementations;
+using CampusPlacementManagement.Services.Interfaces;
+using CampusPlacementManagement.Services.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,6 +56,10 @@ builder.Services.AddControllers();
 // 6. Configure OpenAPI
 
 builder.Services.AddOpenApi();
+
+builder.Services.AddScoped<ICollegeRepository, CollegeRepository>();
+
+builder.Services.AddScoped<ICollegeService, CollegeService>();
 
 var app = builder.Build();
 
