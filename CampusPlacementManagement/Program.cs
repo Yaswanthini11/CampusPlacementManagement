@@ -1,13 +1,16 @@
-
 using CampusPlacementManagement.Data;
 using CampusPlacementManagement.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.DataProtection;
 using CampusPlacementManagement.Repositories.Interfaces;
 using CampusPlacementManagement.Repositories.Implementations;
 using CampusPlacementManagement.Services.Interfaces;
 using CampusPlacementManagement.Services.Implementations;
+
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,17 +25,14 @@ var connectionString =
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
 builder.Services.AddDataProtection();
 
 // 3. Configure ASP.NET Core Identity
 
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
 {
-    // Email must be unique
-
     options.User.RequireUniqueEmail = true;
-
-    // Password requirements
 
     options.Password.RequiredLength = 8;
     options.Password.RequireDigit = true;
@@ -45,32 +45,75 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 .AddSignInManager()
 .AddDefaultTokenProviders();
 
-// 4. Configure authorization services
+// 4. Configure JWT Authentication
+
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("JWT key is missing.");
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+    ?? throw new InvalidOperationException("JWT issuer is missing.");
+
+var jwtAudience = builder.Configuration["Jwt:Audience"]
+    ?? throw new InvalidOperationException("JWT audience is missing.");
+
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+
+        options.DefaultChallengeScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+
+                ValidIssuer = jwtIssuer,
+                ValidAudience = jwtAudience,
+
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(jwtKey))
+            };
+    });
+
+// 5. Configure Authorization
 
 builder.Services.AddAuthorization();
 
-// 5. Register controllers
+// 6. Register controllers and OpenAPI
 
 builder.Services.AddControllers();
-
-// 6. Configure OpenAPI
-
 builder.Services.AddOpenApi();
 
-builder.Services.AddScoped<ICollegeRepository, CollegeRepository>();
+// 7. Register College services
 
+builder.Services.AddScoped<ICollegeRepository, CollegeRepository>();
 builder.Services.AddScoped<ICollegeService, CollegeService>();
+
+// 8. Register Placement Officer services
 
 builder.Services.AddScoped<
     IPlacementOfficerService,
     PlacementOfficerService>();
-builder.Services.AddScoped<IPlacementOfficerRepository,
+
+builder.Services.AddScoped<
+    IPlacementOfficerRepository,
     PlacementOfficerRepository>();
 
+// 9. Register Authentication service
+
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
-// 7. Configure HTTP pipeline
+// 10. Configure HTTP pipeline
 
 if (app.Environment.IsDevelopment())
 {
@@ -79,11 +122,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();
 
-// 8. Seed Identity roles and SuperAdmin
+// 11. Seed Identity roles and SuperAdmin
 
 await DbSeeder.SeedAsync(app.Services);
 
