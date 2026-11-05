@@ -201,6 +201,43 @@ namespace CampusPlacementManagement.Migrations
                     b.ToTable("Companies");
                 });
 
+            modelBuilder.Entity("CampusPlacementManagement.Models.CompanyHR", b =>
+                {
+                    b.Property<int>("CompanyHRId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CompanyHRId"));
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Designation")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("CompanyHRId");
+
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("CompanyHRs");
+                });
+
             modelBuilder.Entity("CampusPlacementManagement.Models.PlacementOfficer", b =>
                 {
                     b.Property<string>("UserId")
@@ -363,6 +400,32 @@ namespace CampusPlacementManagement.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("CampusPlacementManagement.Models.CompanyHR", b =>
+                {
+                    b.HasOne("CampusPlacementManagement.Models.ApplicationUser", "ApprovedByUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CampusPlacementManagement.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CampusPlacementManagement.Models.ApplicationUser", "User")
+                        .WithOne()
+                        .HasForeignKey("CampusPlacementManagement.Models.CompanyHR", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ApprovedByUser");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("CampusPlacementManagement.Models.PlacementOfficer", b =>

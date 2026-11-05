@@ -26,3 +26,4 @@ namespace CampusPlacementManagement.Models
         public ApplicationUser? ApprovedByUser { get; set; }
     }
 }
+

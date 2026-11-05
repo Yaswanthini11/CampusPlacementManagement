@@ -20,3 +20,4 @@ namespace CampusPlacementManagement.Services.Interfaces
         Task<CompanyHRResponseDto?> GetMyProfileAsync(string userId);
     }
 }
+
