@@ -1,4 +1,5 @@
-﻿using CampusPlacementManagement.Constants;
+﻿
+using CampusPlacementManagement.Constants;
 using CampusPlacementManagement.DTOs.Auth;
 using CampusPlacementManagement.Enums;
 using CampusPlacementManagement.Models;
@@ -41,20 +42,29 @@ namespace CampusPlacementManagement.Services.Implementations
             if (!passwordValid)
                 return null;
 
+            // Only approved accounts can log in.
             if (user.AccountStatus != AccountStatus.Approved)
+            {
                 throw new InvalidOperationException(
                     "Your account is not approved or is inactive.");
+            }
 
+            // Get the user's assigned role.
             var roles = await _userManager.GetRolesAsync(user);
+
             string? userRole = roles.FirstOrDefault(role =>
                 role == UserRoles.SuperAdmin ||
-                role == UserRoles.PlacementOfficer);
+                role == UserRoles.PlacementOfficer ||
+                role == UserRoles.CompanyHR);
 
+            // Check whether the role is allowed to log in.
             if (userRole == null)
             {
                 throw new InvalidOperationException(
                     "You are not authorized to log in.");
             }
+
+            // Read JWT configuration.
             string key = _configuration["Jwt:Key"]
                 ?? throw new InvalidOperationException(
                     "JWT key is not configured.");
@@ -67,6 +77,7 @@ namespace CampusPlacementManagement.Services.Implementations
                 ?? throw new InvalidOperationException(
                     "JWT audience is not configured.");
 
+            // Create JWT claims.
             var claims = new List<Claim>
             {
                 new Claim(
@@ -81,11 +92,12 @@ namespace CampusPlacementManagement.Services.Implementations
                     ClaimTypes.Email,
                     user.Email ?? email),
 
-              new Claim(
-    ClaimTypes.Role,
-    userRole)
+                new Claim(
+                    ClaimTypes.Role,
+                    userRole)
             };
 
+            // Create signing key.
             var securityKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(key));
 
@@ -93,6 +105,7 @@ namespace CampusPlacementManagement.Services.Implementations
                 securityKey,
                 SecurityAlgorithms.HmacSha256);
 
+            // Token expires after two hours.
             DateTime expiresAt = DateTime.UtcNow.AddHours(2);
 
             var token = new JwtSecurityToken(
@@ -105,12 +118,13 @@ namespace CampusPlacementManagement.Services.Implementations
             string tokenString =
                 new JwtSecurityTokenHandler().WriteToken(token);
 
+            // Return login response.
             return new LoginResponseDto
             {
                 UserId = user.Id,
                 FullName = user.FullName,
                 Email = user.Email ?? email,
-                Role = UserRoles.SuperAdmin,
+                Role = userRole,
                 Token = tokenString,
                 ExpiresAt = expiresAt
             };
