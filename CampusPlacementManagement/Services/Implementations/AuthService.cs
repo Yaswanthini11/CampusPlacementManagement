@@ -53,10 +53,10 @@ namespace CampusPlacementManagement.Services.Implementations
             var roles = await _userManager.GetRolesAsync(user);
 
             string? userRole = roles.FirstOrDefault(role =>
-                role == UserRoles.SuperAdmin ||
-                role == UserRoles.PlacementOfficer ||
-                role == UserRoles.CompanyHR);
-
+    role == UserRoles.SuperAdmin ||
+    role == UserRoles.PlacementOfficer ||
+    role == UserRoles.CompanyHR ||
+    role == UserRoles.Student);
             // Check whether the role is allowed to log in.
             if (userRole == null)
             {

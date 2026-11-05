@@ -21,6 +21,9 @@ namespace CampusPlacementManagement.Data
         public DbSet<Company> Companies { get; set; }
 
         public DbSet<CompanyHR> CompanyHRs { get; set; }
+
+        public DbSet<Student> Students { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
