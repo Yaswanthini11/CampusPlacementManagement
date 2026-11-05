@@ -61,6 +61,13 @@ builder.Services.AddScoped<ICollegeRepository, CollegeRepository>();
 
 builder.Services.AddScoped<ICollegeService, CollegeService>();
 
+builder.Services.AddScoped<
+    IPlacementOfficerService,
+    PlacementOfficerService>();
+builder.Services.AddScoped<IPlacementOfficerRepository,
+    PlacementOfficerRepository>();
+
+
 var app = builder.Build();
 
 // 7. Configure HTTP pipeline
